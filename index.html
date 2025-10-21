@@ -45,12 +45,7 @@ label { display:block; margin-bottom:4px; }
 <button id="btnCargarFondo">Cargar</button>
 </div>
 
-<h2>Logos disponibles</h2>
-<div class="thumbs" id="logoThumbs"></div>
-<div class="row">
-<label>Cambiar logo manual:</label>
-<input type="file" id="logoFile" accept="image/*">
-</div>
+
 
 <div class="row">
 <label>Cargar ADIF:</label>
@@ -114,7 +109,7 @@ rst:"599"
 let qsos=[];
 let currentQSO=0;
 
-
+/
 });
 
 // Fondos
@@ -143,6 +138,16 @@ function renderThumbs(){
   });
 }
 
+function renderLogoThumbs(){
+  logoThumbsEl.innerHTML="";
+  logos.forEach(src=>{
+    const div=document.createElement("div");
+    div.className="thumb";
+    div.innerHTML=`<img src="${src}">`;
+    div.onclick=()=>{state.logo.src=src; draw();};
+    logoThumbsEl.appendChild(div);
+  });
+}
 
 // Cargar fondo desde URL
 document.getElementById("btnCargarFondo").onclick=()=> {
@@ -289,6 +294,3 @@ renderLogoThumbs();
 </script>
 </body>
 </html>
-
-
-
