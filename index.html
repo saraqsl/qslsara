@@ -114,13 +114,7 @@ rst:"599"
 let qsos=[];
 let currentQSO=0;
 
-// Logos
-let logos=["imagenes/logo1.png","imagenes/logo2.png","imagenes/logo3.png","imagenes/logo4.png","imagenes/logo5.png"];
-logos.forEach((src,i)=>{
-  const imgTest=new Image();
-  imgTest.onload=()=>renderLogoThumbs();
-  imgTest.onerror=()=>logos[i]=`https://via.placeholder.com/150x100.png?text=Logo+${i+1}`;
-  imgTest.src=src;
+
 });
 
 // Fondos
@@ -305,4 +299,5 @@ renderLogoThumbs();
 </script>
 </body>
 </html>
+
 
