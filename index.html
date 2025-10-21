@@ -46,25 +46,6 @@ label { display:block; margin-bottom:4px; }
       <button id="btnCargarFondo">Cargar</button>
     </div>
 
-    <h2>Logos disponibles</h2>
-    <div class="thumbs" id="logoThumbs"></div>
-    <div class="row">
-      <label>Cambiar logo principal:</label>
-      <input type="file" id="logoFile" accept="image/*">
-    </div>
-
-    <h2>Logo secundario</h2>
-    <div class="thumbs" id="logo2Thumbs"></div>
-    <div class="row">
-      <label>Cambiar logo secundario:</label>
-      <input type="file" id="logo2File" accept="image/*">
-    </div>
-
-    <!-- 🔴 Botón desactivar logos ahora acá -->
-    <div class="row">
-      <button id="btn-remove-logos" class="danger">Desactivar logos</button>
-    </div>
-
     <div class="row">
       <label>Cargar ADIF:</label>
       <input type="file" id="adifFile" accept=".adi,.adif">
@@ -101,19 +82,13 @@ label { display:block; margin-bottom:4px; }
 </div>
 
 <script>
-// 👇 acá sigue todo el JS igual que antes (
-
 const canvas=document.getElementById("canvas");
 const ctx=canvas.getContext("2d");
 const thumbsEl=document.getElementById("thumbs");
-const logoThumbsEl=document.getElementById("logoThumbs");
-const logo2ThumbsEl=document.getElementById("logo2Thumbs");
 
 let state={
 images:[],
 current:-1,
-logo:new Image(),
-logo2:new Image(),
 title:"LU9MAH",
 titleColor:"#ffffff",
 titleShadow:true,
@@ -131,26 +106,17 @@ rst:"599"
 let qsos=[];
 let currentQSO=0;
 
-// Logos iniciales
-let logos=["imagenes/logo1.png","imagenes/logo2.png","imagenes/logo3.png"];
-logos.forEach((src,i)=>{
-  const imgTest=new Image();
-  imgTest.onload=()=>renderLogoThumbs();
-  imgTest.onerror=()=>logos[i]=`https://via.placeholder.com/150x100.png?text=Logo+${i+1}`;
-  imgTest.src=src;
-});
-
 // Fondos iniciales
 for(let i=1;i<=12;i++){
   const img=new Image();
-  img.onload=()=>{ state.images.push(img); if(state.current===-1) state.current=0; renderThumbs(); draw();}
+  img.onload=()=>{ state.images.push(img); if(state.current===-1) state.current=0; renderThumbs(); draw(); }
   img.onerror=()=>addImage(`https://via.placeholder.com/1400x900.png?text=Fondo+${i}`);
   img.src=`imagenes/mes${i}.jpg`;
 }
 
 function addImage(url){
   const img=new Image();
-  img.onload=()=>{ state.images.push(img); if(state.current===-1) state.current=0; renderThumbs(); draw();}
+  img.onload=()=>{ state.images.push(img); if(state.current===-1) state.current=0; renderThumbs(); draw(); }
   img.onerror=()=>console.warn("No se pudo cargar imagen",url);
   img.src=url;
 }
@@ -166,58 +132,20 @@ function renderThumbs(){
   });
 }
 
-function renderLogoThumbs(){
-  logoThumbsEl.innerHTML="";
-  logos.forEach(src=>{
-    const div=document.createElement("div");
-    div.className="thumb";
-    div.innerHTML=`<img src="${src}">`;
-    div.onclick=()=>{state.logo.src=src; draw();};
-    logoThumbsEl.appendChild(div);
-  });
-  logo2ThumbsEl.innerHTML="";
-  logos.forEach(src=>{
-    const div=document.createElement("div");
-    div.className="thumb";
-    div.innerHTML=`<img src="${src}">`;
-    div.onclick=()=>{state.logo2.src=src; draw();};
-    logo2ThumbsEl.appendChild(div);
-  });
-}
-
-// Logo manual
-document.getElementById("logoFile").onchange=e=>{
-  const file=e.target.files[0];
-  if(file){
-    const reader=new FileReader();
-    reader.onload=ev=>{state.logo.src=ev.target.result; draw();}
-    reader.readAsDataURL(file);
-  }
-}
-document.getElementById("logo2File").onchange=e=>{
-  const file=e.target.files[0];
-  if(file){
-    const reader=new FileReader();
-    reader.onload=ev=>{state.logo2.src=ev.target.result; draw();}
-    reader.readAsDataURL(file);
-  }
-}
-
 // Inputs
 ["title","titleColor","name","address","locator","corresManual","fecha","utc","banda","modo","rst"].forEach(id=>{
   const el=document.getElementById(id);
-  el.oninput=el.onchange=e=>{state[id]=e.target.value; draw();}
+  el.oninput=el.onchange=e=>{state[id]=e.target.value; draw();};
 });
-document.getElementById("titleShadow").onchange=e=>{state.titleShadow=e.target.checked; draw();}
+document.getElementById("titleShadow").onchange=e=>{state.titleShadow=e.target.checked; draw();};
 
 // Dibujar QSL
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(state.current>=0 && state.images[state.current] && state.images[state.current].complete){
     ctx.drawImage(state.images[state.current],0,0,canvas.width,canvas.height);
-  } else { ctx.fillStyle="#000"; ctx.fillRect(0,0,canvas.width,canvas.height);}
+  } else { ctx.fillStyle="#000"; ctx.fillRect(0,0,canvas.width,canvas.height); }
 
-  // Título y datos fijos
   ctx.fillStyle=state.titleColor;
   ctx.font="bold 90px sans-serif";
   ctx.textAlign="left";
@@ -233,19 +161,6 @@ function draw(){
   ctx.fillText(state.address,30,180);
   ctx.fillText(state.locator,30,220);
 
-  // Logos
-  if(state.logo && state.logo.src && state.logo.complete){
-    const logoWidth=150;
-    const logoHeight=(state.logo.height/state.logo.width)*logoWidth;
-    ctx.drawImage(state.logo,canvas.width-logoWidth-30,110,logoWidth,logoHeight);
-
-    if(state.logo2 && state.logo2.src && state.logo2.complete){
-      const logo2Width=150;
-      const logo2Height=(state.logo2.height/state.logo2.width)*logo2Width;
-      ctx.drawImage(state.logo2,canvas.width-logo2Width-30,110+logoHeight+20,logo2Width,logo2Height);
-    }
-  }
-
   // Barra inferior
   const h = canvas.height*0.1;
   ctx.fillStyle="white";
@@ -255,32 +170,25 @@ function draw(){
   ctx.textAlign="left";
   ctx.textBaseline="middle";
   const y=canvas.height-h/2;
-  const startX = 60;
+  const startX=60;
 
   let correspondent = qsos.length>0?qsos[currentQSO]:null;
   if(correspondent){
     ctx.fillText(`Call: ${correspondent.call||""}`, startX, y);
-    ctx.fillText(`Fecha: ${correspondent.date||""}`, startX + 240, y);
-    ctx.fillText(`UTC: ${correspondent.time||""}`, startX + 550, y);
-    ctx.fillText(`Banda: ${correspondent.banda||""}`, startX +750, y);
-    ctx.fillText(`Modo: ${correspondent.modo||""}`, startX + 950, y);
-    ctx.fillText(`RST: ${correspondent.rst||""}`, startX + 1200, y);
+    ctx.fillText(`Fecha: ${correspondent.date||""}`, startX+240, y);
+    ctx.fillText(`UTC: ${correspondent.time||""}`, startX+550, y);
+    ctx.fillText(`Banda: ${correspondent.banda||""}`, startX+750, y);
+    ctx.fillText(`Modo: ${correspondent.modo||""}`, startX+950, y);
+    ctx.fillText(`RST: ${correspondent.rst||""}`, startX+1200, y);
   } else {
     ctx.fillText(`Call: ${state.corresManual}`, startX, y);
-    ctx.fillText(`Fecha: ${state.fecha}`, startX + 240, y);
-    ctx.fillText(`UTC: ${state.utc}`, startX + 550, y);
-    ctx.fillText(`Banda: ${state.banda}`, startX + 750, y);
-    ctx.fillText(`Modo: ${state.modo}`, startX + 950, y);
-    ctx.fillText(`RST: ${state.rst}`, startX + 1200, y);
+    ctx.fillText(`Fecha: ${state.fecha}`, startX+240, y);
+    ctx.fillText(`UTC: ${state.utc}`, startX+550, y);
+    ctx.fillText(`Banda: ${state.banda}`, startX+750, y);
+    ctx.fillText(`Modo: ${state.modo}`, startX+950, y);
+    ctx.fillText(`RST: ${state.rst}`, startX+1200, y);
   }
 }
-
-// Botón desactivar logos
-document.getElementById("btn-remove-logos").onclick=()=>{
-  state.logo=new Image();
-  state.logo2=new Image();
-  draw();
-};
 
 // ADIF
 document.getElementById("adifFile").onchange=e=>{
@@ -289,25 +197,28 @@ document.getElementById("adifFile").onchange=e=>{
   const reader=new FileReader();
   reader.onload=ev=>{
     qsos=[]; currentQSO=0;
-    document.getElementById("qsoCounter").textContent="0 / 0";
     const contenido=ev.target.result;
     qsos=parseADIF(contenido).filter(qso=>qso.call);
     currentQSO=0;
     draw();
     document.getElementById("qsoCounter").textContent=`${currentQSO+1} / ${qsos.length}`;
-  }
+  };
   reader.readAsText(file);
-}
+};
 
 function parseADIF(adifText){
-  const lines = adifText.split(/<EOR>/i);
+  const lines=adifText.split(/<EOR>/i);
   return lines.map(line=>{
     const getField=tag=>{
       const re=new RegExp(`<${tag}:(\\d+)>`,"i");
       const match=line.match(re);
-      if(match){ const len=parseInt(match[1]); const start=match.index+match[0].length; return line.substr(start,len).trim(); }
+      if(match){
+        const len=parseInt(match[1]);
+        const start=match.index+match[0].length;
+        return line.substr(start,len).trim();
+      }
       return "";
-    }
+    };
     return {
       call:getField("CALL"),
       date:getField("QSO_DATE"),
@@ -315,7 +226,7 @@ function parseADIF(adifText){
       banda:getField("BAND"),
       modo:getField("MODE"),
       rst:getField("RST_SENT")
-    }
+    };
   });
 }
 
@@ -324,7 +235,7 @@ document.getElementById("btnManual").onclick=()=>{
   qsos=[]; currentQSO=0;
   document.getElementById("qsoCounter").textContent="0 / 0";
   draw();
-}
+};
 
 // Navegación QSOs
 document.getElementById("prevQSO").onclick=()=>{
@@ -339,7 +250,8 @@ document.getElementById("nextQSO").onclick=()=>{
 // Inicial
 draw();
 renderThumbs();
-renderLogoThumbs();
 </script>
 </body>
 </html>
+
+
