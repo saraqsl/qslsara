@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Generador de QSL SARA </title>
+<style>
+body { margin:0; font-family:sans-serif; background:#0f172a; color:#e5e7eb; }
+header { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#111827; color:white; }
+.container { display:grid; grid-template-columns:300px 1fr; gap:16px; padding:16px; }
+.panel { background:#1f2937; border-radius:8px; padding:12px; }
+.panel h2 { margin-top:0; font-size:14px; color:#93c5fd; }
+.thumbs { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+.thumb img { width:100%; border-radius:6px; cursor:pointer; border:2px solid transparent; }
+.thumb.active img { border-color:#3b82f6; }
+.row { margin-bottom:8px; font-size:13px; }
+input, select { width:100%; padding:6px; border-radius:4px; border:1px solid #374151; }
+.btns { display:flex; gap:8px; }
+button { padding:8px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; }
+button.primary { background:#22c55e; color:white; }
+button.secondary { background:#3b82f6; color:white; }
+.canvas-box { background:#000; padding:8px; border-radius:8px; text-align:center; overflow:auto; }
+canvas { border-radius:8px; display:block; margin:0 auto; width:700px; height:450px; }
+label { display:block; margin-bottom:4px; }
+.nav-qsl { text-align:center; margin-top:8px; font-size:14px; }
+.nav-qsl button { padding:6px 12px; margin:0 8px; }
+</style>
+</head>
+<body>
+<header>
+<h1>⚓ Generador de QSL SARA ⚓ </h1>
+<div class="btns">
+<button id="btn-download" class="primary">Descargar</button>
+<button id="btn-copy" class="secondary">Copiar</button>
+</div>
+</header>
+
+<div class="container">
+<div class="panel">
+<h2>Imágenes de fondo o actividad </h2>
+<div class="thumbs" id="thumbs"></div>
+<div class="row">
+<label>Cargar fondo desde URL:</label>
+<input type="text" id="urlFondo" placeholder="https://ejemplo.com/fondo.jpg">
+<button id="btnCargarFondo">Cargar</button>
+</div>
+
+
+
+<div class="row">
+<label>Cargar ADIF:</label>
+<input type="file" id="adifFile" accept=".adi,.adif">
+<button id="btnManual">Volver a modo manual</button>
+</div>
+</div>
+
+<div class="panel">
+<h2>Vista previa</h2>
+<div class="canvas-box">
+<canvas id="canvas" width="1400" height="900"></canvas>
+<div class="nav-qsl">
+<button id="prevQSO">⬅ Anterior</button>
+<span id="qsoCounter">0 / 0</span>
+<button id="nextQSO">Siguiente ➡</button>
+</div>
+</div>
+
+<h2>Datos</h2>
+<div class="row"><label>Título / Indicativo:</label><input id="title" type="text" value="LU0AAA"></div>
+<div class="row"><label>Color del título:</label><input id="titleColor" type="color" value="#ffffff"></div>
+<div class="row"><input id="titleShadow" type="checkbox" checked> <label for="titleShadow">Sombra en título</label></div>
+<div class="row"><label>Nombre titular:</label><input id="name" type="text" value="Juan Pérez"></div>
+<div class="row"><label>Dirección / Email:</label><input id="address" type="text" value="juan@email.com"></div>
+<div class="row"><label>Gridsquare / Locator:</label><input id="locator" type="text" value="FN31pr"></div>
+<hr>
+<div class="row"><label>Call corresponsal:</label><input id="corresManual" type="text" value=""></div>
+<div class="row"><label>Fecha:</label><input id="fecha" type="text" value="01/01/25"></div>
+<div class="row"><label>UTC:</label><input id="utc" type="text" value="1200"></div>
+<div class="row"><label>Banda:</label><input id="banda" type="text" value="40m"></div>
+<div class="row"><label>Modo:</label><input id="modo" type="text" value="SSB"></div>
+<div class="row"><label>RST:</label><input id="rst" type="text" value="599"></div>
+</div>
+</div>
+
+<script>
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+const thumbsEl=document.getElementById("thumbs");
+const logoThumbsEl=document.getElementById("logoThumbs");
+
+let state={
+images:[],
+current:-1,
+logo:new Image(),
+title:"LU9MAH",
+titleColor:"#ffffff",
+titleShadow:true,
+name:"CHMIT ADRIAN",
+address:"juan@email.com",
+locator:"FF55GD",
+corresManual:"",
+fecha:"01/01/25",
+utc:"1200",
+banda:"40m",
+modo:"SSB",
+rst:"599"
+};
+
+let qsos=[];
+let currentQSO=0;
+
+/
+});
+
+// Fondos
+for(let i=1;i<=31;i++){
+  const img=new Image();
+  img.onload=()=>{ state.images.push(img); if(state.current===-1) state.current=0; renderThumbs(); draw();}
+  img.onerror=()=>addImage(`https://via.placeholder.com/1400x900.png?text=Fondo+${i}`);
+  img.src=`imagenes/mes${i}.jpg`;
+}
+
+function addImage(url){
+  const img=new Image();
+  img.onload=()=>{ state.images.push(img); if(state.current===-1) state.current=0; renderThumbs(); draw();}
+  img.onerror=()=>console.warn("No se pudo cargar imagen",url);
+  img.src=url;
+}
+
+function renderThumbs(){
+  thumbsEl.innerHTML="";
+  state.images.forEach((img,i)=>{
+    const div=document.createElement("div");
+    div.className="thumb"+(i===state.current?" active":"");
+    div.innerHTML=`<img src="${img.src}">`;
+    div.onclick=()=>{state.current=i; renderThumbs(); draw();};
+    thumbsEl.appendChild(div);
+  });
+}
+
+function renderLogoThumbs(){
+  logoThumbsEl.innerHTML="";
+  logos.forEach(src=>{
+    const div=document.createElement("div");
+    div.className="thumb";
+    div.innerHTML=`<img src="${src}">`;
+    div.onclick=()=>{state.logo.src=src; draw();};
+    logoThumbsEl.appendChild(div);
+  });
+}
+
+// Cargar fondo desde URL
+document.getElementById("btnCargarFondo").onclick=()=> {
+  const url=document.getElementById("urlFondo").value.trim();
+  if(url){ addImage(url); state.current=state.images.length-1; renderThumbs(); draw(); }
+}
+
+// Logo manual
+document.getElementById("logoFile").onchange=e=>{
+  const file=e.target.files[0];
+  if(file){
+    const reader=new FileReader();
+    reader.onload=ev=>{state.logo.src=ev.target.result; draw();}
+    reader.readAsDataURL(file);
+  }
+}
+
+// Inputs
+["title","titleColor","name","address","locator","corresManual","fecha","utc","banda","modo","rst"].forEach(id=>{
+  const el=document.getElementById(id);
+  el.oninput=el.onchange=e=>{state[id]=e.target.value; draw();}
+});
+document.getElementById("titleShadow").onchange=e=>{state.titleShadow=e.target.checked; draw();}
+
+// Dibujar QSL con barra inferior alineada fija y desplazada a la derecha
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(state.current>=0 && state.images[state.current] && state.images[state.current].complete){
+    ctx.drawImage(state.images[state.current],0,0,canvas.width,canvas.height);
+  } else { ctx.fillStyle="#000"; ctx.fillRect(0,0,canvas.width,canvas.height);}
+  
+  // Título y datos fijos
+  ctx.fillStyle=state.titleColor;
+  ctx.font="bold 90px sans-serif";
+  ctx.textAlign="left";
+  ctx.textBaseline="top";
+  ctx.shadowColor=state.titleShadow?"rgba(0,0,0,0.7)":"transparent";
+  ctx.shadowBlur=state.titleShadow?6:0;
+  ctx.shadowOffsetX=state.titleShadow?2:0;
+  ctx.shadowOffsetY=state.titleShadow?2:0;
+  ctx.fillText(state.title,30,30);
+  ctx.shadowColor="transparent";
+  ctx.font="28px sans-serif";
+  ctx.fillText(state.name,30,140);
+  ctx.fillText(state.address,30,180);
+  ctx.fillText(state.locator,30,220);
+  
+  // Logo
+  if(state.logo.complete){
+    const logoWidth=150;
+    const logoHeight=(state.logo.height/state.logo.width)*logoWidth;
+    ctx.drawImage(state.logo,canvas.width-logoWidth-30,110,logoWidth,logoHeight);
+  }
+
+  // Barra inferior con posiciones fijas y margen hacia la derecha
+  const h = canvas.height*0.1;
+  ctx.fillStyle="white";
+  ctx.fillRect(0,canvas.height-h,canvas.width,h);
+  ctx.fillStyle="black";
+  ctx.font="28px sans-serif";
+  ctx.textAlign="left";
+  ctx.textBaseline="middle";
+  const y=canvas.height-h/2;
+  const startX = 60; // margen inicial más a la derecha
+
+  let correspondent = qsos.length>0?qsos[currentQSO]:null;
+  if(correspondent){
+    ctx.fillText(`Call: ${correspondent.call||""}`, startX, y);
+    ctx.fillText(`Fecha: ${correspondent.date||""}`, startX + 240, y);
+    ctx.fillText(`UTC: ${correspondent.time||""}`, startX + 550, y);
+    ctx.fillText(`Banda: ${correspondent.banda||""}`, startX +750, y);
+    ctx.fillText(`Modo: ${correspondent.modo||""}`, startX + 950, y);
+    ctx.fillText(`RST: ${correspondent.rst||""}`, startX + 1200, y);
+  } else {
+    ctx.fillText(`Call: ${state.corresManual}`, startX, y);
+    ctx.fillText(`Fecha: ${state.fecha}`, startX + 240, y);
+    ctx.fillText(`UTC: ${state.utc}`, startX + 550, y);
+    ctx.fillText(`Banda: ${state.banda}`, startX + 750, y);
+    ctx.fillText(`Modo: ${state.modo}`, startX + 950, y);
+    ctx.fillText(`RST: ${state.rst}`, startX + 1200, y);
+  }
+}
+
+// ADIF
+document.getElementById("adifFile").onchange=e=>{
+  const file=e.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    // Borra todo manual anterior
+    qsos=[];
+    currentQSO=0;
+    document.getElementById("qsoCounter").textContent="0 / 0";
+    const contenido=ev.target.result;
+    qsos=parseADIF(contenido).filter(qso=>qso.call);
+    currentQSO=0;
+    draw();
+    document.getElementById("qsoCounter").textContent=`${currentQSO+1} / ${qsos.length}`;
+  }
+  reader.readAsText(file);
+}
+
+function parseADIF(adifText){
+  const lines = adifText.split(/<EOR>/i);
+  return lines.map(line=>{
+    const getField=tag=>{
+      const re=new RegExp(`<${tag}:(\\d+)>`,"i");
+      const match=line.match(re);
+      if(match){ const len=parseInt(match[1]); const start=match.index+match[0].length; return line.substr(start,len).trim(); }
+      return "";
+    }
+    return {
+      call:getField("CALL"),
+      date:getField("QSO_DATE"),
+      time:getField("TIME_ON"),
+      banda:getField("BAND"),
+      modo:getField("MODE"),
+      rst:getField("RST_SENT")
+    }
+  });
+}
+
+// Botón volver a modo manual
+document.getElementById("btnManual").onclick=()=>{
+  qsos=[]; currentQSO=0;
+  document.getElementById("qsoCounter").textContent="0 / 0";
+  draw();
+}
+
+// Navegación QSOs
+document.getElementById("prevQSO").onclick=()=>{
+  if(qsos.length>0) currentQSO=Math.max(0,currentQSO-1);
+  draw(); document.getElementById("qsoCounter").textContent=`${currentQSO+1} / ${qsos.length}`;
+};
+document.getElementById("nextQSO").onclick=()=>{
+  if(qsos.length>0) currentQSO=Math.min(qsos.length-1,currentQSO+1);
+  draw(); document.getElementById("qsoCounter").textContent=`${currentQSO+1} / ${qsos.length}`;
+};
+
+// Inicial
+draw();
+renderThumbs();
+renderLogoThumbs();
+</script>
+</body>
+</html>
