@@ -29,7 +29,7 @@ label { display:block; margin-bottom:4px; }
 </head>
 <body>
 <header>
-  <h1>⚓ Generador de QSL SARA ⚓</h1>
+  <h1>⚓ Generador de QSLs ⚓</h1>
   <div class="btns">
     <button id="btn-download" class="primary">Descargar</button>
     <button id="btn-copy" class="secondary">Copiar</button>
@@ -46,26 +46,7 @@ label { display:block; margin-bottom:4px; }
       <button id="btnCargarFondo">Cargar</button>
     </div>
 
-    <h2>Logos disponibles</h2>
-    <div class="thumbs" id="logoThumbs"></div>
-    <div class="row">
-      <label>Cambiar logo principal:</label>
-      <input type="file" id="logoFile" accept="image/*">
-    </div>
-
-    <h2>Logo secundario</h2>
-    <div class="thumbs" id="logo2Thumbs"></div>
-    <div class="row">
-      <label>Cambiar logo secundario:</label>
-      <input type="file" id="logo2File" accept="image/*">
-    </div>
-
-    <!-- 🔴 Botón desactivar logos ahora acá -->
-    <div class="row">
-      <button id="btn-remove-logos" class="danger">Desactivar logos</button>
-    </div>
-
-    <div class="row">
+       <div class="row">
       <label>Cargar ADIF:</label>
       <input type="file" id="adifFile" accept=".adi,.adif">
       <button id="btnManual">Volver a modo manual</button>
@@ -185,22 +166,8 @@ function renderLogoThumbs(){
   });
 }
 
-// Logo manual
-document.getElementById("logoFile").onchange=e=>{
-  const file=e.target.files[0];
-  if(file){
-    const reader=new FileReader();
-    reader.onload=ev=>{state.logo.src=ev.target.result; draw();}
-    reader.readAsDataURL(file);
-  }
-}
-document.getElementById("logo2File").onchange=e=>{
-  const file=e.target.files[0];
-  if(file){
-    const reader=new FileReader();
-    reader.onload=ev=>{state.logo2.src=ev.target.result; draw();}
-    reader.readAsDataURL(file);
-  }
+
+
 }
 
 // Inputs
@@ -233,18 +200,7 @@ function draw(){
   ctx.fillText(state.address,30,180);
   ctx.fillText(state.locator,30,220);
 
-  // Logos
-  if(state.logo && state.logo.src && state.logo.complete){
-    const logoWidth=150;
-    const logoHeight=(state.logo.height/state.logo.width)*logoWidth;
-    ctx.drawImage(state.logo,canvas.width-logoWidth-30,110,logoWidth,logoHeight);
-
-    if(state.logo2 && state.logo2.src && state.logo2.complete){
-      const logo2Width=150;
-      const logo2Height=(state.logo2.height/state.logo2.width)*logo2Width;
-      ctx.drawImage(state.logo2,canvas.width-logo2Width-30,110+logoHeight+20,logo2Width,logo2Height);
-    }
-  }
+ 
 
   // Barra inferior
   const h = canvas.height*0.1;
