@@ -143,16 +143,6 @@ function renderThumbs(){
   });
 }
 
-function renderLogoThumbs(){
-  logoThumbsEl.innerHTML="";
-  logos.forEach(src=>{
-    const div=document.createElement("div");
-    div.className="thumb";
-    div.innerHTML=`<img src="${src}">`;
-    div.onclick=()=>{state.logo.src=src; draw();};
-    logoThumbsEl.appendChild(div);
-  });
-}
 
 // Cargar fondo desde URL
 document.getElementById("btnCargarFondo").onclick=()=> {
@@ -299,5 +289,6 @@ renderLogoThumbs();
 </script>
 </body>
 </html>
+
 
 
